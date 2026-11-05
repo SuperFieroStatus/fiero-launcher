@@ -50,8 +50,9 @@ ui/ListScreen     – copied from FlipSpot; rows stretch to fill the box (36 dp 
 ```
 
 The `HOME` intent filter sits on `.HomeAlias`, which ships **disabled**, so installing or updating Fiero can
-never make it a home candidate by itself. `scripts\deploy.ps1 -SetHome` enables the alias and calls
-`set-home-activity`; `-RevertHome` puts Launcher4 back and disables the alias again.
+never make it a home candidate by itself. `scripts\deploy.ps1 -SetHome` starts Fiero with
+`--ez home_alias true` (Fiero enables its own alias) and calls `set-home-activity`; `-RevertHome` puts Launcher4
+back and has Fiero disable the alias again.
 
 ## Milestones
 
@@ -59,8 +60,8 @@ never make it a home candidate by itself. `scripts\deploy.ps1 -SetHome` enables 
 
 **M1 — Now Playing, ringer, play/pause (done 2026-11-05)**. Still launched with `am start`.
 
-**M2 — default home** (only with the user's OK): `deploy.ps1 -SetHome`, then check Home and End both land on
-Fiero and the Right shortcut (FlipSpot) still works.
+**M2 — default home (done 2026-11-05, with the user's OK)**. `deploy.ps1 -SetHome`; Home and End land on Fiero,
+Right opens FlipSpot, Back from FlipSpot returns to Fiero. Revert: `deploy.ps1 -RevertHome`.
 
 ### Now Playing source: decision
 
@@ -117,3 +118,14 @@ AGP 9.5.0 with built-in Kotlin.
   `zen_mode`=0.
 - `KeyEvent.isLongPress` is set on the first auto-repeat (also on `input keyevent --longpress`), so * / # act
   on key-up when short and on the long-press repeat otherwise.
+
+### M2 (2026-11-05)
+
+- `adb shell pm enable <component>` fails for a non-debuggable (release) app: "Shell cannot change component
+  state". The app itself may toggle its own components, so Fiero does it on an intent extra.
+- `cmd package set-home-activity dev.mike.fierolauncher/.HomeAlias` works once the alias is enabled; the
+  default-home check then reports `dev.mike.fierolauncher/.HomeAlias`, isDefault=true.
+- Home key → Fiero (clears All apps above it). End, tested as an injected KEYCODE_POWER short press, goes Home
+  and leaves the screen on (`end_button_behavior`=1). A physical End press is still to be confirmed by hand.
+- Right → FlipSpot, Back from FlipSpot → Fiero. Reinstalling Fiero keeps it the default home (the alias's
+  enabled state persists across `install -r`).

@@ -44,7 +44,7 @@
         <!--
           The HOME entry point lives on a disabled alias so installing Fiero never offers it as a
           home app by itself. Switching (only with an explicit OK) is:
-            adb shell pm enable dev.mike.fierolauncher/.HomeAlias
+            Fiero enables .HomeAlias itself (scripts/deploy.ps1 -SetHome starts it with extra home_alias=true)
             adb shell cmd package set-home-activity dev.mike.fierolauncher/.HomeAlias
           Revert:
             adb shell cmd package set-home-activity com.tim.flip2.launcher4/com.android.launcher3.Launcher

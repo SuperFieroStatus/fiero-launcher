@@ -98,13 +98,15 @@ if ($HomeInfo -or $SetHome -or $RevertHome) {
     if ($SetHome) {
         Step "Making Fiero the default home. Revert with: .\scripts\deploy.ps1 -RevertHome"
         Step "  (= adb shell cmd package set-home-activity $Launcher4)"
-        Adb shell pm enable $HomeAlias
+        # Fiero toggles its own alias: adb may not change components of a non-debuggable (release) app.
+        Adb shell am start -n $Activity --ez home_alias true
+        Start-Sleep -Seconds 1
         Adb shell cmd package set-home-activity $HomeAlias
     }
     if ($RevertHome) {
         Step 'Putting Launcher4 back as the default home'
         Adb shell cmd package set-home-activity $Launcher4
-        Adb shell pm disable $HomeAlias
+        Adb shell am start -n $Activity --ez home_alias false
     }
     Show-Home
     exit 0

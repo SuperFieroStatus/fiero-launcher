@@ -66,6 +66,29 @@ class HomeActivity : Activity(), KeyActionHandler {
             format24Hour = datePattern
         }
         Log.i(KeyRouter.TAG, "HomeActivity created")
+        handleHomeAlias(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleHomeAlias(intent)
+    }
+
+    /**
+     * `am start ... --ez home_alias true|false` (deploy.ps1 -SetHome / -RevertHome). adb can't toggle
+     * components of a non-debuggable app, but an app may always toggle its own.
+     */
+    private fun handleHomeAlias(intent: Intent?) {
+        if (intent?.hasExtra(EXTRA_HOME_ALIAS) != true) return
+        val on = intent.getBooleanExtra(EXTRA_HOME_ALIAS, false)
+        packageManager.setComponentEnabledSetting(
+            android.content.ComponentName(this, "$packageName.HomeAlias"),
+            if (on) android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            else android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            android.content.pm.PackageManager.DONT_KILL_APP,
+        )
+        Log.i(KeyRouter.TAG, "HomeAlias ${if (on) "enabled" else "disabled"}")
+        intent.removeExtra(EXTRA_HOME_ALIAS)
     }
 
     override fun onResume() {
@@ -240,6 +263,7 @@ class HomeActivity : Activity(), KeyActionHandler {
 
     companion object {
         private const val SCREEN = "Home"
+        private const val EXTRA_HOME_ALIAS = "home_alias"
         val FLIPSPOT = android.content.ComponentName("dev.mike.flipspot", "dev.mike.flipspot.HomeActivity")
     }
 }
