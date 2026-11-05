@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
-import android.media.AudioManager
 import android.os.SystemClock
 import android.provider.Settings
 import android.text.TextUtils
@@ -14,7 +13,6 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.Display
 import android.view.Gravity
-import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.LinearLayout
@@ -22,10 +20,10 @@ import android.widget.TextView
 import dev.mike.fierolauncher.ui.KeyRouter
 
 /**
- * The TCL Flip 2's outside: the front button and the 128×128 outer screen.
+ * The TCL Flip 2's outside: the front button and the 128Ã—128 outer screen.
  *
  * - **Front button:** the system turns each press into the (unprotected) broadcast
- *   `com.tct.intent.action.QUICK_BUTTON_TAP`; Fiero toggles play/pause on it.
+ *   `com.tct.intent.action.QUICK_BUTTON_TAP`; Fiero pauses whatever is playing (never plays).
  * - **Outer screen:** TCL's own clock lives there (a SystemUI presentation). Fiero adds a small
  *   Now Playing strip along its bottom with an overlay window (needs "display over other apps",
  *   granted over adb: `appops set dev.mike.fierolauncher SYSTEM_ALERT_WINDOW allow`).
@@ -71,12 +69,10 @@ object OuterScreen {
         lastPress = now
         // Notification access may have been granted after start: retry the session watch.
         nowPlaying.start()
-        if (nowPlaying.togglePlayPause()) return
-        // Nothing loaded: a media key resumes the app that played last (e.g. Spotify).
-        val audio = app.getSystemService(AudioManager::class.java)
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY))
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY))
-        Log.i(KeyRouter.TAG, "front button: sent MEDIA_PLAY")
+        // Pause only: the button is easy to press by accident in a pocket, so it never starts playback.
+        // (Play with * held on the home screen, or from the app.)
+        val paused = nowPlaying.pauseAll()
+        Log.i(KeyRouter.TAG, "front button: paused $paused session(s)")
     }
 
     // ---- outer screen ----
@@ -146,7 +142,7 @@ object OuterScreen {
             box.visibility = View.GONE
             return
         }
-        title?.text = "${if (l.playing) "▶" else "❚❚"} ${l.title}"
+        title?.text = "${if (l.playing) "â–¶" else "âšâš"} ${l.title}"
         artist?.text = l.subtitle
         artist?.visibility = if (l.subtitle.isEmpty()) View.GONE else View.VISIBLE
         box.visibility = View.VISIBLE

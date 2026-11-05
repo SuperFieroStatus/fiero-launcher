@@ -22,7 +22,8 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
   touch and, on a 240×320 screen, mostly shows the music player). OK opens one, left soft key clears it,
   right soft key clears all. The home screen shows how many are waiting ("Notices 2").
 - **Long presses:** `*` play/pause, `#` toggles Silent.
-- **Front button** (TCL Flip 2): plays / pauses music, even with the flip closed.
+- **Front button** (TCL Flip 2): pauses music, even with the flip closed. It never starts playback, so a
+  pocket press can't set it off; hold `*` on the home screen to play.
 - **Outer screen** (TCL Flip 2): a Now Playing strip (song and artist) along the bottom of the small
   128×128 front screen, under the phone's own clock. Optional: make that screen's background black.
 - **Tiny:** ~75 KB, no libraries, no network access, no ads or tracking.

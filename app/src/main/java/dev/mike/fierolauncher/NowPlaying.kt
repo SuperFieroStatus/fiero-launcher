@@ -116,6 +116,13 @@ class NowPlaying(context: Context, private val onChange: (Line?) -> Unit) {
         return true
     }
 
+    /** Pauses every session that's playing; never starts anything. Returns how many it paused. */
+    fun pauseAll(): Int {
+        val playing = controllers.filter { it.isPlaying() }
+        playing.forEach { it.transportControls.pause() }
+        return playing.size
+    }
+
     private fun MediaController.isPlaying() = playbackState?.state == PlaybackState.STATE_PLAYING
 
     companion object {
