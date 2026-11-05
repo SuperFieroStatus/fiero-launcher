@@ -167,6 +167,7 @@ class HomeActivity : Activity(), KeyActionHandler {
         fun label(d: Shortcuts.Dir) = "${d.arrow} ${Shortcuts.get(this, d)?.label ?: "—"}"
         hints.text = "${label(Shortcuts.Dir.UP)}   ${label(Shortcuts.Dir.DOWN)}\n" +
             "${label(Shortcuts.Dir.LEFT)}   ${label(Shortcuts.Dir.RIGHT)}"
+        softRight.text = Shortcuts.get(this, Shortcuts.Dir.SOFT_RIGHT)?.label.orEmpty()
     }
 
     // ---- keys ----
@@ -199,7 +200,7 @@ class HomeActivity : Activity(), KeyActionHandler {
             KeyAction.RIGHT -> openShortcut(Shortcuts.Dir.RIGHT)
             KeyAction.OK -> startActivity(Intent(this, AllAppsActivity::class.java))
             KeyAction.SOFT_LEFT -> expandNotifications()
-            KeyAction.SOFT_RIGHT -> Apps.launch(this, FLIPSPOT, "FlipSpot")
+            KeyAction.SOFT_RIGHT -> openShortcut(Shortcuts.Dir.SOFT_RIGHT)
             KeyAction.CALL -> dial("")
             KeyAction.DIGIT -> dial(key.digit.toString())
             KeyAction.STAR, KeyAction.POUND -> Unit // handled above
@@ -264,6 +265,5 @@ class HomeActivity : Activity(), KeyActionHandler {
     companion object {
         private const val SCREEN = "Home"
         private const val EXTRA_HOME_ALIAS = "home_alias"
-        val FLIPSPOT = android.content.ComponentName("dev.mike.flipspot", "dev.mike.flipspot.HomeActivity")
     }
 }

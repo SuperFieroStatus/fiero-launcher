@@ -4,8 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 
 /**
- * D-pad shortcuts on the home screen, kept in Fiero's own prefs (never Settings.Global, which
- * Launcher4 owns and rewrites). Stored as "label|package/class".
+ * Home-screen shortcuts (four D-pad directions + the right soft key), kept in Fiero's own prefs (never
+ * Settings.Global, which Launcher4 owns and rewrites). Stored as "label|package/class".
  */
 object Shortcuts {
     enum class Dir(val key: String, val arrow: String, val title: String) {
@@ -13,11 +13,19 @@ object Shortcuts {
         DOWN("down", "▼", "Down"),
         LEFT("left", "◀", "Left"),
         RIGHT("right", "▶", "Right"),
+        SOFT_RIGHT("softright", "⏵", "Right soft key"),
+        ;
+
+        /** How the shortcut menu names this slot. */
+        val menuName: String get() = if (this == SOFT_RIGHT) title else "$arrow key"
     }
 
     data class Shortcut(val label: String, val component: ComponentName)
 
-    /** Launcher4's shortcuts at the time Fiero was written. */
+    /**
+     * Starting shortcuts (the author's TCL Flip 2 setup). A default whose app isn't installed shows as
+     * empty, so on other phones the slots start blank until you assign them.
+     */
     private val defaults = mapOf(
         Dir.UP to Shortcut("Spotify", ComponentName("com.spotify.music", "com.spotify.music.MainActivity")),
         Dir.DOWN to Shortcut(
@@ -26,15 +34,19 @@ object Shortcuts {
         ),
         Dir.LEFT to Shortcut("F-Droid", ComponentName("org.fdroid.fdroid", "org.fdroid.IconActivity")),
         Dir.RIGHT to Shortcut("FlipSpot", ComponentName("dev.mike.flipspot", "dev.mike.flipspot.HomeActivity")),
+        Dir.SOFT_RIGHT to Shortcut("FlipSpot", ComponentName("dev.mike.flipspot", "dev.mike.flipspot.HomeActivity")),
     )
+
+    private fun installedDefault(context: Context, dir: Dir): Shortcut? =
+        defaults[dir]?.takeIf { context.packageManager.getLaunchIntentForPackage(it.component.packageName) != null }
 
     private fun prefs(context: Context) = context.getSharedPreferences("shortcuts", Context.MODE_PRIVATE)
 
     fun get(context: Context, dir: Dir): Shortcut? {
-        val raw = prefs(context).getString(dir.key, null) ?: return defaults[dir]
+        val raw = prefs(context).getString(dir.key, null) ?: return installedDefault(context, dir)
         if (raw.isEmpty()) return null // explicitly cleared
         val label = raw.substringBefore('|')
-        val component = ComponentName.unflattenFromString(raw.substringAfter('|')) ?: return defaults[dir]
+        val component = ComponentName.unflattenFromString(raw.substringAfter('|')) ?: return installedDefault(context, dir)
         return Shortcut(label, component)
     }
 

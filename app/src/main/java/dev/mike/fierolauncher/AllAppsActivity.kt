@@ -97,9 +97,9 @@ class AllAppsActivity : Activity(), KeyActionHandler {
         val actions = mutableListOf<Pair<String, () -> Unit>>()
         for (dir in Shortcuts.Dir.entries) {
             val now = Shortcuts.get(this, dir)?.label ?: "—"
-            actions += "${dir.arrow} key: $now" to {
+            actions += "${dir.menuName}: $now" to {
                 Shortcuts.set(this, dir, Shortcuts.Shortcut(app.label, app.component))
-                say("${dir.arrow} ${app.label}")
+                say("${dir.menuName}: ${app.label}")
             }
         }
         actions += "App info" to {

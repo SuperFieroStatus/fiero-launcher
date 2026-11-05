@@ -2,7 +2,7 @@
 
 Minimal launcher to replace Launcher4 (`com.tim.flip2.launcher4`) on the TCL Flip 2 (4058G, Android 11 / SDK 30,
 240×320 at 160 dpi, armeabi-v7a, 1 GB RAM, no touch, no GMS). This is FlipSpot's milestone M5
-(`C:\dev\flipspot\PLAN.md`); keys, constraints and build setup come from there.
+([FlipSpot's PLAN.md](https://github.com/SuperFieroStatus/flipspot/blob/main/PLAN.md)); keys, constraints and build setup come from there.
 
 ## Hard constraints
 
@@ -23,7 +23,7 @@ line (▶/❚❚ title · artist, hidden when no session), D-pad hints, soft-key
 | D-pad ▲▼◀▶ | Open the app on that key (Fiero's own prefs; defaults Spotify / Maps / F-Droid / FlipSpot) |
 | OK | All apps |
 | Left soft | Notification shade (`StatusBarManager.expandNotificationsPanel`, EXPAND_STATUS_BAR) |
-| Right soft | FlipSpot |
+| Right soft | Assignable shortcut (default FlipSpot) |
 | Call | Dialer |
 | 0–9 | Dialer pre-filled with that digit |
 | \* / # short | Dialer pre-filled with \* / # (fires on key-up) |
@@ -62,6 +62,10 @@ back and has Fiero disable the alias again.
 
 **M2 — default home (done 2026-11-05, with the user's OK)**. `deploy.ps1 -SetHome`; Home and End land on Fiero,
 Right opens FlipSpot, Back from FlipSpot returns to Fiero. Revert: `deploy.ps1 -RevertHome`.
+
+**v0.3.0 — public release (2026-11-05)**. Right soft key is a fifth shortcut slot (assign it like the arrows).
+Defaults whose app isn't installed show as empty, so other phones start with blank slots. MIT license,
+README with screenshots, APK on GitHub Releases.
 
 ### Now Playing source: decision
 
