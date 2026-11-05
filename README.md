@@ -18,6 +18,9 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 - **All apps:** an alphabetical list. Type on the number keys to filter it T9-style: `6277` finds "Maps",
   `3437` finds "Fiero Nav". Matching works on the start of any word in the name.
 - **Phone-style keys:** Call opens the dialer; digits, `*` and `#` open the dialer with that key typed.
+- **Notices:** the left soft key opens a keypad list of your notifications (the stock shade is built for
+  touch and, on a 240×320 screen, mostly shows the music player). OK opens one, left soft key clears it,
+  right soft key clears all. The home screen shows how many are waiting ("Notices 2").
 - **Long presses:** `*` play/pause, `#` toggles Silent.
 - **Front button** (TCL Flip 2): plays / pauses music, even with the flip closed.
 - **Outer screen** (TCL Flip 2): a Now Playing strip (song and artist) along the bottom of the small
@@ -30,7 +33,7 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 |---|---|
 | D-pad ▲ ▼ ◀ ▶ | Open the app on that key |
 | OK | All apps |
-| Left soft key | Notification shade |
+| Left soft key | Notices (your notifications) |
 | Right soft key | Open the app on that key (shown on the label) |
 | Call | Dialer |
 | 0–9, `*`, `#` (short) | Dialer with that key typed |
@@ -39,6 +42,9 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 
 **All apps:** ▲▼ move, ◀▶ page, OK opens, digits filter, Back deletes a digit (then leaves),
 right soft key clears the filter, **left soft key = Options**: put the app on a key, or App info.
+
+**Notices:** ▲▼ move, OK opens, left soft key clears, right soft key clears all (press twice), Back goes home.
+Media players are left out (they're on the Now Playing line); ongoing ones (USB, charging) are grey.
 
 To change a shortcut: OK → find the app → left soft key → pick the key.
 
@@ -52,7 +58,7 @@ turned on in the phone's Developer options.
    ```bash
    adb install -r fiero-launcher-0.4.0.apk
    ```
-3. Let it read what's playing (optional, for the Now Playing line, `*` play/pause and the front button), and
+3. Let it read notifications (for Notices) and what's playing (Now Playing, `*` play/pause, the front button), and
    draw on the outer screen (optional, TCL Flip 2):
    ```bash
    adb shell cmd notification allow_listener dev.mike.fierolauncher/dev.mike.fierolauncher.MediaListener

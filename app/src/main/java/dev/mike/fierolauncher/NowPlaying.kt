@@ -9,14 +9,35 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import android.util.Log
 import dev.mike.fierolauncher.ui.KeyRouter
 
 /**
- * Exists only so Fiero holds notification-listener access, which is what lets it read other apps'
- * MediaSessions. Grant once: `adb shell cmd notification allow_listener <this component>`.
+ * Notification-listener access: lets Fiero read other apps' MediaSessions (Now Playing) and list
+ * notifications on its own Notices screen. Grant once: `adb shell cmd notification allow_listener <this component>`.
  */
-class MediaListener : NotificationListenerService()
+class MediaListener : NotificationListenerService() {
+    override fun onListenerConnected() {
+        instance = this
+        Notices.changed()
+    }
+
+    override fun onListenerDisconnected() {
+        if (instance === this) instance = null
+        Notices.changed()
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) = Notices.changed()
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) = Notices.changed()
+
+    companion object {
+        /** The bound listener (same process), or null before the system connects it. */
+        @Volatile
+        var instance: MediaListener? = null
+            private set
+    }
+}
 
 /**
  * Follows the most relevant active MediaSession (playing first, Spotify preferred) and reports a

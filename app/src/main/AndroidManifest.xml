@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Left soft key opens the notification shade (normal permission, granted at install). -->
+    <!-- Notices screen falls back to the stock shade without notification access (normal permission). -->
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <!-- # long-press silences the ringer; full Silent needs Do Not Disturb (policy) access. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
@@ -79,6 +79,12 @@
 
         <activity
             android:name=".AllAppsActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
+        <activity
+            android:name=".NoticesActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:screenOrientation="portrait"

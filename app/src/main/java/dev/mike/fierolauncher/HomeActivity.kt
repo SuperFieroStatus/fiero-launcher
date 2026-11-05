@@ -1,6 +1,5 @@
 package dev.mike.fierolauncher
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
@@ -34,6 +33,8 @@ class HomeActivity : Activity(), KeyActionHandler {
     private lateinit var battery: TextView
     private lateinit var hints: TextView
     private lateinit var softRight: TextView
+    private lateinit var softLeft: TextView
+    private val noticesChanged: () -> Unit = { showNoticeCount() }
     private lateinit var telephony: TelephonyManager
     private lateinit var audio: AudioManager
     private lateinit var nowPlayingView: TextView
@@ -51,6 +52,7 @@ class HomeActivity : Activity(), KeyActionHandler {
         battery = findViewById(R.id.battery)
         hints = findViewById(R.id.hints)
         softRight = findViewById(R.id.soft_right)
+        softLeft = findViewById(R.id.soft_left)
         telephony = getSystemService(TelephonyManager::class.java)
         audio = getSystemService(AudioManager::class.java)
         nowPlayingView = findViewById(R.id.now_playing)
@@ -117,6 +119,14 @@ class HomeActivity : Activity(), KeyActionHandler {
         showSignal(telephony.signalStrength)
         registerReceiver(ringerReceiver, IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION))
         nowPlaying.start()
+        Notices.observe(noticesChanged)
+        showNoticeCount()
+    }
+
+    /** "Notices 3" on the left soft key; plain "Notices" when there's nothing (or no access). */
+    private fun showNoticeCount() {
+        val n = Notices.current()?.count { it.clearable } ?: 0
+        softLeft.text = if (n > 0) "Notices $n" else "Notices"
     }
 
     override fun onPause() {
@@ -125,6 +135,7 @@ class HomeActivity : Activity(), KeyActionHandler {
         @Suppress("DEPRECATION")
         telephony.listen(signalListener, PhoneStateListener.LISTEN_NONE)
         unregisterReceiver(ringerReceiver)
+        Notices.unobserve(noticesChanged)
         nowPlaying.stop()
         pendingShort = 0
     }
@@ -215,7 +226,7 @@ class HomeActivity : Activity(), KeyActionHandler {
             KeyAction.LEFT -> openShortcut(Shortcuts.Dir.LEFT)
             KeyAction.RIGHT -> openShortcut(Shortcuts.Dir.RIGHT)
             KeyAction.OK -> startActivity(Intent(this, AllAppsActivity::class.java))
-            KeyAction.SOFT_LEFT -> expandNotifications()
+            KeyAction.SOFT_LEFT -> startActivity(Intent(this, NoticesActivity::class.java))
             KeyAction.SOFT_RIGHT -> openShortcut(Shortcuts.Dir.SOFT_RIGHT)
             KeyAction.CALL -> dial("")
             KeyAction.DIGIT -> dial(key.digit.toString())
@@ -263,18 +274,6 @@ class HomeActivity : Activity(), KeyActionHandler {
             Log.w(KeyRouter.TAG, "silent mode refused: $e")
             audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
             say("Vibrate")
-        }
-    }
-
-    /** StatusBarManager.expandNotificationsPanel is hidden API; needs EXPAND_STATUS_BAR (normal). */
-    @SuppressLint("WrongConstant")
-    private fun expandNotifications() {
-        try {
-            val sbm = getSystemService("statusbar")
-            sbm.javaClass.getMethod("expandNotificationsPanel").invoke(sbm)
-        } catch (e: Exception) {
-            Log.w(KeyRouter.TAG, "expandNotificationsPanel failed: $e")
-            say("Can't open notifications")
         }
     }
 
