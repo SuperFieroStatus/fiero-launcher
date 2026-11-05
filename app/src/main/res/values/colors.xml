@@ -7,4 +7,6 @@
     <color name="highlight">#FFFF7A1A</color>
     <color name="highlight_text">#FF000000</color>
     <color name="divider">#FF2A2A2A</color>
+    <color name="icon_bg">#FF111111</color>
+    <color name="flame_core">#FFFFC23D</color>
 </resources>

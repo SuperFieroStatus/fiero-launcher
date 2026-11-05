@@ -91,7 +91,10 @@ fun toT9(text: String): String {
  * True if the typed digits match the start of any word in the label ("Maps Lite": "6277" and "5483"
  * both match). '0' in [typed] stands for a word break, so "6270548" matches "Maps Li…".
  */
-fun AppEntry.matchesT9(typed: String): Boolean {
+fun AppEntry.matchesT9(typed: String): Boolean = t9Matches(t9, typed)
+
+/** [t9] is a label already passed through [toT9]; pure so it can be unit-tested off-device. */
+fun t9Matches(t9: String, typed: String): Boolean {
     if (typed.isEmpty()) return true
     for (i in t9.indices) {
         val wordStart = i == 0 || (t9[i - 1] == '0' && t9[i] != '0')

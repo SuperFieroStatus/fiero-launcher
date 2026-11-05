@@ -36,4 +36,7 @@ android {
     }
 }
 
-// No dependencies: framework Views and APIs only.
+// No runtime dependencies: framework Views and APIs only. JUnit is test-only and never ships.
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+}

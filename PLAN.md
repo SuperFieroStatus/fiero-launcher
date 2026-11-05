@@ -133,3 +133,11 @@ AGP 9.5.0 with built-in Kotlin.
 - After `adb reboot` (boot_completed in ~20 s): Fiero is still the default home and comes up first with no lock
   screen; notification-listener access survives (`enabled_notification_listeners`), and the Now Playing line
   showed Spotify's restored (paused) session.
+
+### Polish (2026-11-05)
+
+- Icon: orange/yellow flame on near-black (adaptive vector). This phone's Settings > App info shows no icons,
+  and `APPLICATION_DETAILS_SETTINGS` resolves back to the home app, so the icon is only visible in Launcher4's
+  grid or the recents/permission UI.
+- T9 matching is a pure function (`t9Matches`) with JVM unit tests: `gradlew testDebugUnitTest` (AGP 9 makes
+  unit-test tasks for debug only). JUnit is test-only; the APK still has no dependencies.
