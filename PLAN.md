@@ -129,3 +129,6 @@ AGP 9.5.0 with built-in Kotlin.
   and leaves the screen on (`end_button_behavior`=1). A physical End press is still to be confirmed by hand.
 - Right → FlipSpot, Back from FlipSpot → Fiero. Reinstalling Fiero keeps it the default home (the alias's
   enabled state persists across `install -r`).
+- After `adb reboot` (boot_completed in ~20 s): Fiero is still the default home and comes up first with no lock
+  screen; notification-listener access survives (`enabled_notification_listeners`), and the Now Playing line
+  showed Spotify's restored (paused) session.
