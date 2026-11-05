@@ -95,6 +95,9 @@ function Show-Home {
 # ---- Default-home switching ----
 if ($HomeInfo -or $SetHome -or $RevertHome) {
     Require-Device
+    # `am start` prints "Warning: ... delivered to currently running top-most instance" on stderr when Fiero
+    # is already open; under 'Stop' PowerShell 5.1 treats that as fatal and the switch stops half-way.
+    $ErrorActionPreference = 'Continue'
     if ($SetHome) {
         Step "Making Fiero the default home. Revert with: .\scripts\deploy.ps1 -RevertHome"
         Step "  (= adb shell cmd package set-home-activity $Launcher4)"
