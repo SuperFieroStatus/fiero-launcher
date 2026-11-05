@@ -15,8 +15,8 @@ Minimal launcher to replace Launcher4 (`com.tim.flip2.launcher4`) on the TCL Fli
 
 ## Screens and keys
 
-**Home**: glance row (signal bars, carrier, battery), large clock, date, Now Playing line (M1), D-pad hints,
-soft-key labels.
+**Home**: glance row (signal bars, carrier, ringer mode if not Normal, battery), large clock, date, Now Playing
+line (▶/❚❚ title · artist, hidden when no session), D-pad hints, soft-key labels.
 
 | Key | Action |
 |---|---|
@@ -25,7 +25,10 @@ soft-key labels.
 | Left soft | Notification shade (`StatusBarManager.expandNotificationsPanel`, EXPAND_STATUS_BAR) |
 | Right soft | FlipSpot |
 | Call | Dialer |
-| 0–9, *, # | Dialer pre-filled with that key |
+| 0–9 | Dialer pre-filled with that digit |
+| \* / # short | Dialer pre-filled with \* / # (fires on key-up) |
+| \* long | Play/pause the Now Playing session |
+| # long | Ringer: Normal ↔ Silent (Vibrate if Silent is refused) |
 | Back | Nothing (Home is the bottom of the stack) |
 
 **All apps**: alphabetical, virtualised `ListScreen` from FlipSpot. Digits filter T9-style against the start of
@@ -37,6 +40,8 @@ Left soft = Options: put the app on a D-pad key, or App info.
 ```
 FieroApp          – package-change receiver invalidates the app-list cache; one io thread
 Apps              – launchable-app query (cached), launch with fallback, T9 matching
+NowPlaying        – follows active MediaSessions (playing first, Spotify preferred); MediaListener is the
+                    empty NotificationListenerService that grants access to them
 Shortcuts         – D-pad shortcut store (SharedPreferences "shortcuts", "label|pkg/cls")
 HomeActivity      – home screen; also the HOME entry via the disabled alias .HomeAlias
 AllAppsActivity   – app list, T9 filter, shortcut assignment
@@ -52,16 +57,14 @@ never make it a home candidate by itself. `scripts\deploy.ps1 -SetHome` enables 
 
 **M0 — scaffold, home, shortcuts, all apps (done 2026-11-05)**. Launched with `am start`; not the default home.
 
-**M1 — Now Playing + polish**
-- Now Playing line from Spotify's MediaSession (see decision below); OK-free play/pause on `#` long-press or
-  similar, if it doesn't clash with dialing.
-- `#` long-press: silent/vibrate (vibrate needs no permission; full silent needs notification-policy access).
-- Then: make Fiero the default home **with the user's OK**, and check Home and End both land on Fiero and that
-  the Right shortcut (FlipSpot) still works.
+**M1 — Now Playing, ringer, play/pause (done 2026-11-05)**. Still launched with `am start`.
+
+**M2 — default home** (only with the user's OK): `deploy.ps1 -SetHome`, then check Home and End both land on
+Fiero and the Right shortcut (FlipSpot) still works.
 
 ### Now Playing source: decision
 
-Proposed: **MediaSession via a NotificationListenerService in Fiero**, not a FlipSpot provider/broadcast.
+Chosen (M1): **MediaSession via a NotificationListenerService in Fiero**, not a FlipSpot provider/broadcast.
 - Spotify publishes an active MediaSession whenever it plays (`dumpsys media_session`: `com.spotify.music`
   active=true), whoever started the playback.
 - FlipSpot has no service; its App Remote state exists only while its process is alive and connected, which on
@@ -101,3 +104,16 @@ AGP 9.5.0 with built-in Kotlin.
   still typed in it ("5" → "55"); starting it with NEW_TASK|CLEAR_TASK gives a fresh number.
 - The key's ACTION_UP does not leak into the app that a key-down launched.
 - No SIM in the phone at the moment: carrier is empty, so the glance row shows "No service".
+
+### M1 (2026-11-05)
+
+- `cmd notification allow_listener dev.mike.fierolauncher/dev.mike.fierolauncher.MediaListener` grants access
+  without touch; `deploy.ps1` repeats it after every install. Launcher4's own listener was not enabled.
+- Spotify's session reports title/artist (e.g. "Solar Cruise · Oscillian") and play state; `transportControls`
+  play/pause works. The session disappears some time after playback stops (none listed before the test), so
+  the line hides then.
+- Notification-listener access also gives Do Not Disturb policy access: `RINGER_MODE_SILENT` works without a
+  separate `allow_dnd` grant, and sets `zen_mode`=1 (Silent icon in the status bar). Back to Normal resets
+  `zen_mode`=0.
+- `KeyEvent.isLongPress` is set on the first auto-repeat (also on `input keyevent --longpress`), so * / # act
+  on key-up when short and on the long-press repeat otherwise.

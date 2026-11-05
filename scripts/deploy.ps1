@@ -136,6 +136,10 @@ Step 'Installing'
 Adb install -r $Apk
 if ($LASTEXITCODE -ne 0) { Fail 'adb install failed' }
 
+# Notification-listener access (Now Playing reads MediaSessions). Idempotent; survives reinstalls,
+# but cheap to repeat after a fresh install.
+Adb shell cmd notification allow_listener "$Package/$Package.MediaListener"
+
 if (-not $NoLaunch) {
     Adb logcat -c
     Step "Launching $Activity"

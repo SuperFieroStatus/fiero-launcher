@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
@@ -34,6 +35,13 @@ class HomeActivity : Activity(), KeyActionHandler {
     private lateinit var hints: TextView
     private lateinit var softRight: TextView
     private lateinit var telephony: TelephonyManager
+    private lateinit var audio: AudioManager
+    private lateinit var nowPlayingView: TextView
+    private lateinit var nowPlaying: NowPlaying
+    private var batteryText = ""
+
+    /** '*' or '#' pressed and not yet long-pressed: acted on at key-up (short press dials it). */
+    private var pendingShort: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +52,9 @@ class HomeActivity : Activity(), KeyActionHandler {
         hints = findViewById(R.id.hints)
         softRight = findViewById(R.id.soft_right)
         telephony = getSystemService(TelephonyManager::class.java)
+        audio = getSystemService(AudioManager::class.java)
+        nowPlayingView = findViewById(R.id.now_playing)
+        nowPlaying = NowPlaying(this, ::showNowPlaying)
 
         findViewById<TextClock>(R.id.clock).apply {
             format12Hour = "h:mm"
@@ -65,6 +76,8 @@ class HomeActivity : Activity(), KeyActionHandler {
         @Suppress("DEPRECATION")
         telephony.listen(signalListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS)
         showSignal(telephony.signalStrength)
+        registerReceiver(ringerReceiver, IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION))
+        nowPlaying.start()
     }
 
     override fun onPause() {
@@ -72,6 +85,9 @@ class HomeActivity : Activity(), KeyActionHandler {
         unregisterReceiver(batteryReceiver)
         @Suppress("DEPRECATION")
         telephony.listen(signalListener, PhoneStateListener.LISTEN_NONE)
+        unregisterReceiver(ringerReceiver)
+        nowPlaying.stop()
+        pendingShort = 0
     }
 
     // ---- glance row ----
@@ -85,7 +101,32 @@ class HomeActivity : Activity(), KeyActionHandler {
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
         val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
         if (level < 0) return
-        battery.text = "${if (plugged) "⚡" else ""}${level * 100 / scale.coerceAtLeast(1)}%"
+        batteryText = "${if (plugged) "⚡" else ""}${level * 100 / scale.coerceAtLeast(1)}%"
+        showStatus()
+    }
+
+    private val ringerReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = showStatus()
+    }
+
+    /** Battery, prefixed with the ringer mode when it isn't Normal. */
+    private fun showStatus() {
+        val ringer = when (audio.ringerMode) {
+            AudioManager.RINGER_MODE_SILENT -> "Silent  "
+            AudioManager.RINGER_MODE_VIBRATE -> "Vibrate  "
+            else -> ""
+        }
+        battery.text = ringer + batteryText
+    }
+
+    private fun showNowPlaying(line: NowPlaying.Line?) {
+        if (line == null) {
+            nowPlayingView.visibility = android.view.View.GONE
+            return
+        }
+        val text = if (line.subtitle.isEmpty()) line.title else "${line.title} · ${line.subtitle}"
+        nowPlayingView.text = "${if (line.playing) "▶" else "❚❚"} $text"
+        nowPlayingView.visibility = android.view.View.VISIBLE
     }
 
     @Suppress("DEPRECATION")
@@ -107,11 +148,27 @@ class HomeActivity : Activity(), KeyActionHandler {
 
     // ---- keys ----
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean =
-        KeyRouter.dispatch(event, SCREEN, this) || super.dispatchKeyEvent(event)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // KeyRouter consumes the key-up of handled keys without telling us; short * / # act on it.
+        if (event.action == KeyEvent.ACTION_UP && event.keyCode == pendingShort) {
+            pendingShort = 0
+            dial(if (event.keyCode == KeyEvent.KEYCODE_STAR) "*" else "#")
+        }
+        return KeyRouter.dispatch(event, SCREEN, this) || super.dispatchKeyEvent(event)
+    }
 
     override fun onKeyAction(key: RoutedKey, event: KeyEvent): Boolean {
-        if (event.repeatCount > 0) return true // nothing on Home auto-repeats
+        if (key.action == KeyAction.STAR || key.action == KeyAction.POUND) {
+            // Short press dials it (on key-up); long press: * = play/pause, # = ringer.
+            if (event.repeatCount == 0) {
+                pendingShort = event.keyCode
+            } else if (event.isLongPress && pendingShort == event.keyCode) {
+                pendingShort = 0
+                if (key.action == KeyAction.STAR) playPause() else toggleRinger()
+            }
+            return true
+        }
+        if (event.repeatCount > 0) return true // nothing else on Home auto-repeats
         when (key.action) {
             KeyAction.UP -> openShortcut(Shortcuts.Dir.UP)
             KeyAction.DOWN -> openShortcut(Shortcuts.Dir.DOWN)
@@ -122,8 +179,7 @@ class HomeActivity : Activity(), KeyActionHandler {
             KeyAction.SOFT_RIGHT -> Apps.launch(this, FLIPSPOT, "FlipSpot")
             KeyAction.CALL -> dial("")
             KeyAction.DIGIT -> dial(key.digit.toString())
-            KeyAction.STAR -> dial("*")
-            KeyAction.POUND -> dial("#")
+            KeyAction.STAR, KeyAction.POUND -> Unit // handled above
             KeyAction.BACK -> Unit // Home is the bottom of the stack: swallow Back
         }
         return true
@@ -143,6 +199,30 @@ class HomeActivity : Activity(), KeyActionHandler {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             say("No dialer")
+        }
+    }
+
+    private fun playPause() {
+        if (!nowPlaying.togglePlayPause()) say("Nothing playing")
+    }
+
+    /**
+     * Normal -> Silent -> Normal. Silent needs Do Not Disturb access on Android 11; without it,
+     * fall back to Vibrate (always allowed).
+     */
+    private fun toggleRinger() {
+        if (audio.ringerMode != AudioManager.RINGER_MODE_NORMAL) {
+            audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
+            say("Ringer on")
+            return
+        }
+        try {
+            audio.ringerMode = AudioManager.RINGER_MODE_SILENT
+            say("Silent")
+        } catch (e: SecurityException) {
+            Log.w(KeyRouter.TAG, "silent mode refused: $e")
+            audio.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+            say("Vibrate")
         }
     }
 
