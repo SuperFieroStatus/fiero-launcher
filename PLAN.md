@@ -1,0 +1,103 @@
+# Fiero Launcher — keypad home screen for the TCL Flip 2
+
+Minimal launcher to replace Launcher4 (`com.tim.flip2.launcher4`) on the TCL Flip 2 (4058G, Android 11 / SDK 30,
+240×320 at 160 dpi, armeabi-v7a, 1 GB RAM, no touch, no GMS). This is FlipSpot's milestone M5
+(`C:\dev\flipspot\PLAN.md`); keys, constraints and build setup come from there.
+
+## Hard constraints
+
+- No touch: everything works with D-pad, OK, Back, soft keys, Call, 0–9/*/#.
+- Kotlin, plain Android Views, no Compose, no DI, **no dependencies**. minSdk/targetSdk 30, compileSdk 37.
+- 16–18 sp text, ~5 list rows per screen.
+- Launcher4 stays installed as the fallback. Never uninstall or disable it.
+- Default home changes only with an explicit OK. Revert:
+  `adb shell cmd package set-home-activity com.tim.flip2.launcher4/com.android.launcher3.Launcher`
+
+## Screens and keys
+
+**Home**: glance row (signal bars, carrier, battery), large clock, date, Now Playing line (M1), D-pad hints,
+soft-key labels.
+
+| Key | Action |
+|---|---|
+| D-pad ▲▼◀▶ | Open the app on that key (Fiero's own prefs; defaults Spotify / Maps / F-Droid / FlipSpot) |
+| OK | All apps |
+| Left soft | Notification shade (`StatusBarManager.expandNotificationsPanel`, EXPAND_STATUS_BAR) |
+| Right soft | FlipSpot |
+| Call | Dialer |
+| 0–9, *, # | Dialer pre-filled with that key |
+| Back | Nothing (Home is the bottom of the stack) |
+
+**All apps**: alphabetical, virtualised `ListScreen` from FlipSpot. Digits filter T9-style against the start of
+any word ("6277" → Maps…), `0` = word break; Back deletes a digit, then leaves; right soft clears the filter.
+Left soft = Options: put the app on a D-pad key, or App info.
+
+## Architecture
+
+```
+FieroApp          – package-change receiver invalidates the app-list cache; one io thread
+Apps              – launchable-app query (cached), launch with fallback, T9 matching
+Shortcuts         – D-pad shortcut store (SharedPreferences "shortcuts", "label|pkg/cls")
+HomeActivity      – home screen; also the HOME entry via the disabled alias .HomeAlias
+AllAppsActivity   – app list, T9 filter, shortcut assignment
+ui/KeyRouter      – copied from FlipSpot (+ CALL, '#' renamed POUND), log tag "Fiero"
+ui/ListScreen     – copied from FlipSpot; rows stretch to fill the box (36 dp minimum)
+```
+
+The `HOME` intent filter sits on `.HomeAlias`, which ships **disabled**, so installing or updating Fiero can
+never make it a home candidate by itself. `scripts\deploy.ps1 -SetHome` enables the alias and calls
+`set-home-activity`; `-RevertHome` puts Launcher4 back and disables the alias again.
+
+## Milestones
+
+**M0 — scaffold, home, shortcuts, all apps (done 2026-11-05)**. Launched with `am start`; not the default home.
+
+**M1 — Now Playing + polish**
+- Now Playing line from Spotify's MediaSession (see decision below); OK-free play/pause on `#` long-press or
+  similar, if it doesn't clash with dialing.
+- `#` long-press: silent/vibrate (vibrate needs no permission; full silent needs notification-policy access).
+- Then: make Fiero the default home **with the user's OK**, and check Home and End both land on Fiero and that
+  the Right shortcut (FlipSpot) still works.
+
+### Now Playing source: decision
+
+Proposed: **MediaSession via a NotificationListenerService in Fiero**, not a FlipSpot provider/broadcast.
+- Spotify publishes an active MediaSession whenever it plays (`dumpsys media_session`: `com.spotify.music`
+  active=true), whoever started the playback.
+- FlipSpot has no service; its App Remote state exists only while its process is alive and connected, which on
+  1 GB RAM is often not the case. A FlipSpot provider would need FlipSpot running, a signature permission,
+  change notifications, and a commit in both repos.
+- The listener is one small class plus a one-time grant over adb
+  (`adb shell cmd notification allow_listener dev.mike.fierolauncher/dev.mike.fierolauncher.MediaListener`),
+  and also gives play/pause/skip through `MediaController.transportControls`. Launcher4 does the same thing.
+- Cost: audiobook author may be missing from the session metadata (FlipSpot found App Remote has no artist for
+  chapters). Acceptable for a one-line strip.
+
+## Dev loop
+
+```
+.\scripts\deploy.ps1            # debug build, install, am start, logcat (tag Fiero)
+.\scripts\deploy.ps1 -Release   # R8 build, 59 KB, signed with the debug key
+.\scripts\deploy.ps1 -HomeInfo  # which app is the default home
+```
+
+JDK: `C:\Program Files\Android\Android Studio\jbr` (PATH java is Java 8). Gradle 9.8.2 wrapper (checksum-pinned),
+AGP 9.5.0 with built-in Kotlin.
+
+## Phone findings
+
+### M0 (2026-11-05)
+
+- Screen is 240×320 physical, density 160 (no forced size at the moment). The system status bar takes the top
+  ~24 px and a black system strip ~30 px sits under the app window, so an app gets about 240×266 dp:
+  5 list rows of ~39 dp with a title bar, footer and soft-key bar.
+- Launcher4 is the default home via the role (`cmd package resolve-activity … HOME` → Launcher4, isDefault).
+  Its `keyshortcut_*key` globals use full class names (`com.spotify.music.MainActivity`, etc.); Fiero's defaults
+  copy them.
+- 25 launchable apps, including Launcher4's own entries ("12Key-Keyboard", "Call history", …).
+- `StatusBarManager.expandNotificationsPanel` (hidden API, called reflectively) opens the shade from a
+  targetSdk-30 app with only EXPAND_STATUS_BAR.
+- The stock dialer (`com.android.dialer/.app.DialpadActivity`) appends `ACTION_DIAL` numbers to whatever is
+  still typed in it ("5" → "55"); starting it with NEW_TASK|CLEAR_TASK gives a fresh number.
+- The key's ACTION_UP does not leak into the app that a key-down launched.
+- No SIM in the phone at the moment: carrier is empty, so the glance row shows "No service".
