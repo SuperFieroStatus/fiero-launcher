@@ -126,7 +126,8 @@ AGP 9.5.0 with built-in Kotlin.
 - `cmd package set-home-activity dev.mike.fierolauncher/.HomeAlias` works once the alias is enabled; the
   default-home check then reports `dev.mike.fierolauncher/.HomeAlias`, isDefault=true.
 - Home key → Fiero (clears All apps above it). End, tested as an injected KEYCODE_POWER short press, goes Home
-  and leaves the screen on (`end_button_behavior`=1). A physical End press is still to be confirmed by hand.
+  and leaves the screen on (`end_button_behavior`=1). A physical End press from inside an app also lands on Fiero
+  (confirmed by hand; Telecom logs `endCallInternal` first, then goes Home when there is no call).
 - Right → FlipSpot, Back from FlipSpot → Fiero. Reinstalling Fiero keeps it the default home (the alias's
   enabled state persists across `install -r`).
 - After `adb reboot` (boot_completed in ~20 s): Fiero is still the default home and comes up first with no lock
