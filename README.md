@@ -19,7 +19,10 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
   `3437` finds "Fiero Nav". Matching works on the start of any word in the name.
 - **Phone-style keys:** Call opens the dialer; digits, `*` and `#` open the dialer with that key typed.
 - **Long presses:** `*` play/pause, `#` toggles Silent.
-- **Tiny:** ~70 KB, no libraries, no network access, no ads or tracking.
+- **Front button** (TCL Flip 2): plays / pauses music, even with the flip closed.
+- **Outer screen** (TCL Flip 2): a Now Playing strip (song and artist) along the bottom of the small
+  128×128 front screen, under the phone's own clock. Optional: make that screen's background black.
+- **Tiny:** ~75 KB, no libraries, no network access, no ads or tracking.
 
 ## Keys on the home screen
 
@@ -47,11 +50,13 @@ turned on in the phone's Developer options.
 1. Download `fiero-launcher-*.apk` from [Releases](../../releases) (or [build it](#build)).
 2. Install it:
    ```bash
-   adb install -r fiero-launcher-0.3.0.apk
+   adb install -r fiero-launcher-0.4.0.apk
    ```
-3. Let it read what's playing (optional, for the Now Playing line and `*` play/pause):
+3. Let it read what's playing (optional, for the Now Playing line, `*` play/pause and the front button), and
+   draw on the outer screen (optional, TCL Flip 2):
    ```bash
    adb shell cmd notification allow_listener dev.mike.fierolauncher/dev.mike.fierolauncher.MediaListener
+   adb shell appops set dev.mike.fierolauncher SYSTEM_ALERT_WINDOW allow
    ```
 4. Try it without changing anything: `adb shell am start -n dev.mike.fierolauncher/.HomeActivity`
 5. **Make it the home screen** when you're happy:
@@ -64,6 +69,17 @@ turned on in the phone's Developer options.
 
 ```bash
 adb shell cmd package set-home-activity com.tim.flip2.launcher4/com.android.launcher3.Launcher
+```
+
+### Black outer screen (optional, TCL Flip 2)
+
+The outer screen's clock sits on the phone's wallpaper. Fiero can set a plain black wallpaper (the lock
+screen turns black too; Fiero's home screen is black anyway) and keep the old one to put back:
+
+```bash
+adb shell pm grant dev.mike.fierolauncher android.permission.READ_EXTERNAL_STORAGE   # lets it back up the old one
+adb shell am start -n dev.mike.fierolauncher/.HomeActivity --es wallpaper black
+adb shell am start -n dev.mike.fierolauncher/.HomeActivity --es wallpaper restore    # undo
 ```
 
 (For another phone, find the original with
@@ -99,7 +115,9 @@ On Windows, `scripts\deploy.ps1` does build + install + launch + logcat in one g
 ## How it works
 
 Plain Kotlin and Android Views, no dependencies. The Now Playing line reads active media sessions through
-a notification listener, which is also what allows Silent mode. The home-screen entry lives on a disabled
+a notification listener, which is also what allows Silent mode. On the TCL Flip 2 the front button arrives
+as the broadcast `com.tct.intent.action.QUICK_BUTTON_TAP`, and the outer screen is a second display
+(128×128) that Fiero draws on with an overlay window. The home-screen entry lives on a disabled
 activity-alias so installing Fiero can't hijack the Home key.
 [`PLAN.md`](PLAN.md) has the design notes and everything learned about the phone along the way.
 

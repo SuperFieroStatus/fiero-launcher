@@ -67,17 +67,32 @@ class HomeActivity : Activity(), KeyActionHandler {
         }
         Log.i(KeyRouter.TAG, "HomeActivity created")
         handleHomeAlias(intent)
+        handleWallpaper(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleHomeAlias(intent)
+        handleWallpaper(intent)
     }
 
     /**
      * `am start ... --ez home_alias true|false` (deploy.ps1 -SetHome / -RevertHome). adb can't toggle
      * components of a non-debuggable app, but an app may always toggle its own.
      */
+    /** `--es wallpaper black|restore` (see [Wallpaper]): black wallpaper = black outer screen. */
+    private fun handleWallpaper(intent: Intent?) {
+        val what = intent?.getStringExtra(EXTRA_WALLPAPER) ?: return
+        intent.removeExtra(EXTRA_WALLPAPER)
+        val msg = try {
+            Wallpaper.apply(this, what)
+        } catch (e: Exception) {
+            "Wallpaper change failed: ${e.message}"
+        }
+        Log.i(KeyRouter.TAG, msg)
+        say(msg)
+    }
+
     private fun handleHomeAlias(intent: Intent?) {
         if (intent?.hasExtra(EXTRA_HOME_ALIAS) != true) return
         val on = intent.getBooleanExtra(EXTRA_HOME_ALIAS, false)
@@ -93,6 +108,7 @@ class HomeActivity : Activity(), KeyActionHandler {
 
     override fun onResume() {
         super.onResume()
+        OuterScreen.retry() // in case "display over other apps" was just granted
         showShortcuts()
         // Sticky broadcast: registering returns the current state immediately.
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.let(::showBattery)
@@ -265,5 +281,6 @@ class HomeActivity : Activity(), KeyActionHandler {
     companion object {
         private const val SCREEN = "Home"
         private const val EXTRA_HOME_ALIAS = "home_alias"
+        private const val EXTRA_WALLPAPER = "wallpaper"
     }
 }

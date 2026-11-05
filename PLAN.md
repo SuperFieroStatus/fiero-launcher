@@ -63,6 +63,11 @@ back and has Fiero disable the alias again.
 **M2 — default home (done 2026-11-05, with the user's OK)**. `deploy.ps1 -SetHome`; Home and End land on Fiero,
 Right opens FlipSpot, Back from FlipSpot returns to Fiero. Revert: `deploy.ps1 -RevertHome`.
 
+**v0.4.0 — front button and outer screen (2026-11-05).** Front button toggles play/pause (falls back to a
+MEDIA_PLAY key when nothing is loaded, resuming the last player). A Now Playing strip is drawn along the
+bottom of the 128×128 outer screen (overlay window on display 1). Optional black wallpaper (adb extra
+`wallpaper=black|restore`, backs up the old one) turns the outer screen's background black.
+
 **v0.3.0 — public release (2026-11-05)**. Right soft key is a fifth shortcut slot (assign it like the arrows).
 Defaults whose app isn't installed show as empty, so other phones start with blank slots. MIT license,
 README with screenshots, APK on GitHub Releases.
@@ -145,3 +150,22 @@ AGP 9.5.0 with built-in Kotlin.
   grid or the recents/permission UI.
 - T9 matching is a pure function (`t9Matches`) with JVM unit tests: `gradlew testDebugUnitTest` (AGP 9 makes
   unit-test tasks for debug only). JUnit is test-only; the APK still has no dependencies.
+
+### Front button and outer screen (2026-11-05)
+
+- **Outer screen:** `dumpsys display` lists display 1, "Sub Screen", 128×128 at 213 dpi, `FLAG_PRESENTATION`.
+  SystemUI draws TCL's clock (time, date, battery, notification badge) there as a `TYPE_PRESENTATION` window,
+  on top of the system wallpaper. It's on only with the flip closed and the phone awake (it times out after a
+  few seconds); `screencap -d 1` captures it. An app can add a `TYPE_APPLICATION_OVERLAY` window to it via
+  `createDisplayContext(display).createWindowContext(...)` once "display over other apps" is allowed
+  (`appops set <pkg> SYSTEM_ALERT_WINDOW allow`); it draws above TCL's clock.
+- **Black background:** there is no TCL setting for it, but the clock is drawn over the system wallpaper, so a
+  black wallpaper (`WallpaperManager.setBitmap`, system + lock) gives a black outer screen.
+- **Keys** (`/system/usr/keylayout`): `gpio_keys` 252 → `CLAMSHELL` (flip sensor; DOWN = opened, UP =
+  closed), `mtk-kpd` 212 → `QUICK_DIAL` (the front button; getevent shows `KEY_CAMERA`), and on the keypad
+  30 → `MESSENGER`, 138 → `FAVORITE_CONTACTS`, 59 → `SPEAKER` (TCL keycodes).
+- **Front button:** PhoneWindowManager handles `QUICK_DIAL` itself (`quickDialClick`, with triple-press
+  detection, `isQDThreeClick`) and sends the unprotected broadcast `com.tct.intent.action.QUICK_BUTTON_TAP`
+  (twice per press) plus `ACTION_QUICK_DIAL_TAP` to Telecom. A dynamically registered receiver in a
+  running app gets it; a hold isn't distinguishable from a tap. The flip state is also broadcast
+  (`sendClamshellBroacast`, action name not logged).

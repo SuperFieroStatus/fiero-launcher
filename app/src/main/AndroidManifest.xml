@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <!-- # long-press silences the ringer; full Silent needs Do Not Disturb (policy) access. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- Now Playing strip on the 128x128 outer screen (overlay window on that display; granted over adb). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Black wallpaper (= black outer screen); reading it first lets the old one be restored. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <!-- Android 11 package visibility: see every app that has a launcher entry (All apps list). -->
     <queries>

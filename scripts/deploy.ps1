@@ -141,6 +141,8 @@ if ($LASTEXITCODE -ne 0) { Fail 'adb install failed' }
 # Notification-listener access (Now Playing reads MediaSessions). Idempotent; survives reinstalls,
 # but cheap to repeat after a fresh install.
 Adb shell cmd notification allow_listener "$Package/$Package.MediaListener"
+# "Display over other apps": lets Fiero draw the Now Playing strip on the outer screen.
+Adb shell appops set $Package SYSTEM_ALERT_WINDOW allow
 
 if (-not $NoLaunch) {
     Adb logcat -c

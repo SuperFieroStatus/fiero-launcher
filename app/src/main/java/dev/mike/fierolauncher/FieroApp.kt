@@ -23,6 +23,8 @@ class FieroApp : Application() {
         registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) = Apps.invalidate()
         }, filter)
+        // Front button (play/pause) and the Now Playing strip on the outer screen.
+        OuterScreen.start(this)
     }
 
     companion object {
