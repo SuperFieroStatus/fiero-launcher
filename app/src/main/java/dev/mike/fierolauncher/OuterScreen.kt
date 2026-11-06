@@ -146,7 +146,7 @@ object OuterScreen {
             return
         }
         tempView?.text = "${w.symbol} ${w.temp}"
-        textView?.text = w.text
+        textView?.text = w.umbrella.ifEmpty { w.text } // chance of rain is the more useful glance
         box.visibility = View.VISIBLE
     }
 

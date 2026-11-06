@@ -15,8 +15,20 @@ import dev.mike.fierolauncher.ui.KeyRouter
  * signature permission, so only apps signed with the same key can take part.
  */
 object Weather {
-    data class Info(val symbol: String, val temp: String, val text: String, val hilo: String, val place: String, val at: Long) {
+    data class Info(
+        val symbol: String,
+        val temp: String,
+        val text: String,
+        val hilo: String,
+        val place: String,
+        val at: Long,
+        /** % chance of rain in the next 12 hours, -1 if unknown. */
+        val rain: Int,
+    ) {
         val age: Long get() = System.currentTimeMillis() - at
+
+        /** "☂️ 30%", or "" when unknown. */
+        val umbrella: String get() = if (rain < 0) "" else "☂️ $rain%"
     }
 
     const val PERMISSION = "dev.mike.fiero.permission.WEATHER"
@@ -44,7 +56,7 @@ object Weather {
         if (at == 0L) return null
         val info = Info(
             p.getString("symbol", "").orEmpty(), p.getString("temp", "").orEmpty(), p.getString("text", "").orEmpty(),
-            p.getString("hilo", "").orEmpty(), p.getString("place", "").orEmpty(), at,
+            p.getString("hilo", "").orEmpty(), p.getString("place", "").orEmpty(), at, p.getInt("rain", -1),
         )
         return info.takeIf { it.age < EXPIRED_MS && it.temp.isNotEmpty() }
     }
@@ -57,6 +69,7 @@ object Weather {
             .putString("hilo", i.getStringExtra("hilo"))
             .putString("place", i.getStringExtra("place"))
             .putLong("at", i.getLongExtra("at", System.currentTimeMillis()))
+            .putInt("rain", i.getIntExtra("rain", -1))
             .apply()
         main.post { observers.toList().forEach { it() } }
     }
@@ -71,8 +84,9 @@ object Weather {
         c.sendBroadcast(Intent(ACTION_REFRESH).setPackage(WEATHER_PACKAGE), PERMISSION)
     }
 
-    /** One line for the home screen: "☁️ 60° Cloudy · H 72° L 56°". */
-    fun line(i: Info): String = "${i.symbol} ${i.temp} ${i.text}" + if (i.hilo.isNotEmpty()) " · ${i.hilo}" else ""
+    /** One line for the home screen: "☁️ 60° Cloudy · ☂️ 30% · H 72° L 56°" (the end is cut if it doesn't fit). */
+    fun line(i: Info): String = listOf("${i.symbol} ${i.temp} ${i.text}", i.umbrella, i.hilo)
+        .filter { it.isNotEmpty() }.joinToString(" · ")
 }
 
 class WeatherReceiver : BroadcastReceiver() {

@@ -25,9 +25,9 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 - **Front button** (TCL Flip 2): pauses music, even with the flip closed. It never starts playback, so a
   pocket press can't set it off; hold `*` on the home screen to play.
 - **Weather** (with [Fiero Weather](https://github.com/SuperFieroStatus/fiero-weather) installed): the current
-  conditions under the date, e.g. `☁️ 60° Cloudy · H 71° L 56°`. Fiero itself still never goes online:
+  conditions and chance of rain under the date, e.g. `☁️ 60° Cloudy · ☂️ 30% · H 71° L 56°`. Fiero itself still never goes online:
   Fiero Weather refreshes every 30 minutes and hands the line over. Without it the line just isn't shown.
-- **Outer screen** (TCL Flip 2): the current weather along the bottom of the small 128×128 front screen,
+- **Outer screen** (TCL Flip 2): the temperature and chance of rain (`☀️ 62° ☂️ 0%`) along the bottom of the small 128×128 front screen,
   under the phone's own clock. Optional: make that screen's background black.
 - **Tiny:** ~75 KB, no libraries, no network access, no ads or tracking.
 
