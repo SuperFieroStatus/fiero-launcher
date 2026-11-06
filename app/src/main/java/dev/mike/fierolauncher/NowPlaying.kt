@@ -20,6 +20,11 @@ import dev.mike.fierolauncher.ui.KeyRouter
 class MediaListener : NotificationListenerService() {
     override fun onListenerConnected() {
         instance = this
+        try {
+            activeNotifications.orEmpty().forEach(::snoozeOwnOverlayNotice)
+        } catch (e: Exception) {
+            Log.w(KeyRouter.TAG, "listener: can't read notifications: $e")
+        }
         Notices.changed()
     }
 
@@ -28,10 +33,31 @@ class MediaListener : NotificationListenerService() {
         Notices.changed()
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) = Notices.changed()
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        sbn?.let(::snoozeOwnOverlayNotice)
+        Notices.changed()
+    }
+
+    /**
+     * Android posts an unclearable "Fiero is displaying over other apps" notice for the outer-screen strip,
+     * and its switch in Settings is locked. Snoozing it hides it from the shade and the status-bar count; it's
+     * snoozed again whenever it's re-posted (after a reboot, or when the strip is re-attached).
+     */
+    private fun snoozeOwnOverlayNotice(sbn: StatusBarNotification) {
+        if (sbn.packageName != "android" || sbn.tag?.startsWith(OVERLAY_NOTICE_TAG) != true) return
+        try {
+            snoozeNotification(sbn.key, SNOOZE_MS)
+            Log.i(KeyRouter.TAG, "listener: snoozed the overlay notice")
+        } catch (e: Exception) {
+            Log.w(KeyRouter.TAG, "listener: can't snooze the overlay notice: $e")
+        }
+    }
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = Notices.changed()
 
     companion object {
+        private const val OVERLAY_NOTICE_TAG = "com.android.server.wm.AlertWindowNotification - dev.mike.fierolauncher"
+        private const val SNOOZE_MS = 365L * 24 * 60 * 60 * 1000
+
         /** The bound listener (same process), or null before the system connects it. */
         @Volatile
         var instance: MediaListener? = null
