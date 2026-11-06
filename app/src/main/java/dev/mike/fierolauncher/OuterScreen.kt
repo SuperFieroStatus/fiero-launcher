@@ -20,12 +20,12 @@ import android.widget.TextView
 import dev.mike.fierolauncher.ui.KeyRouter
 
 /**
- * The TCL Flip 2's outside: the front button and the 128Ã—128 outer screen.
+ * The TCL Flip 2's outside: the front button and the 128×128 outer screen.
  *
  * - **Front button:** the system turns each press into the (unprotected) broadcast
  *   `com.tct.intent.action.QUICK_BUTTON_TAP`; Fiero pauses whatever is playing (never plays).
  * - **Outer screen:** TCL's own clock lives there (a SystemUI presentation). Fiero adds a small
- *   Now Playing strip along its bottom with an overlay window (needs "display over other apps",
+ *   weather strip along its bottom (from Fiero Weather, see [Weather]) with an overlay window (needs "display over other apps",
  *   granted over adb: `appops set dev.mike.fierolauncher SYSTEM_ALERT_WINDOW allow`).
  *
  * Lives for the whole launcher process (started from [FieroApp]); the home app is kept running.
@@ -39,14 +39,15 @@ object OuterScreen {
 
     private var windowManager: WindowManager? = null
     private var strip: View? = null
-    private var title: TextView? = null
-    private var artist: TextView? = null
-    private var line: NowPlaying.Line? = null
+    private var tempView: TextView? = null
+    private var textView: TextView? = null
 
     fun start(context: Context) {
         app = context.applicationContext
-        nowPlaying = NowPlaying(app) { l -> line = l; render() }
+        // Only for the front button (pause); the strip shows the weather.
+        nowPlaying = NowPlaying(app) { }
         nowPlaying.start()
+        Weather.observe { render() }
 
         app.registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) = frontButton()
@@ -95,7 +96,7 @@ object OuterScreen {
         val pad = (3 * ctx.resources.displayMetrics.density).toInt()
         val t = TextView(ctx).apply {
             setTextColor(0xFFFFFFFF.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             paint.isFakeBoldText = true
             isSingleLine = true
             ellipsize = TextUtils.TruncateAt.END
@@ -105,9 +106,11 @@ object OuterScreen {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
             isSingleLine = true
             ellipsize = TextUtils.TruncateAt.END
+            setPadding(pad, 0, 0, 0)
         }
         val box = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
             setBackgroundColor(0xE0000000.toInt())
             setPadding(pad, pad / 2, pad, pad / 2)
             addView(t)
@@ -129,22 +132,21 @@ object OuterScreen {
         }
         windowManager = wm
         strip = box
-        title = t
-        artist = a
+        tempView = t
+        textView = a
         render()
-        Log.i(KeyRouter.TAG, "outer screen: Now Playing strip attached to display ${display.displayId}")
+        Log.i(KeyRouter.TAG, "outer screen: weather strip attached to display ${display.displayId}")
     }
 
     private fun render() {
         val box = strip ?: return
-        val l = line
-        if (l == null) {
+        val w = Weather.current(app)
+        if (w == null) {
             box.visibility = View.GONE
             return
         }
-        title?.text = "${if (l.playing) "â–¶" else "âšâš"} ${l.title}"
-        artist?.text = l.subtitle
-        artist?.visibility = if (l.subtitle.isEmpty()) View.GONE else View.VISIBLE
+        tempView?.text = "${w.symbol} ${w.temp}"
+        textView?.text = w.text
         box.visibility = View.VISIBLE
     }
 

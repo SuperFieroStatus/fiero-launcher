@@ -24,8 +24,11 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 - **Long presses:** `*` play/pause, `#` toggles Silent.
 - **Front button** (TCL Flip 2): pauses music, even with the flip closed. It never starts playback, so a
   pocket press can't set it off; hold `*` on the home screen to play.
-- **Outer screen** (TCL Flip 2): a Now Playing strip (song and artist) along the bottom of the small
-  128×128 front screen, under the phone's own clock. Optional: make that screen's background black.
+- **Weather** (with [Fiero Weather](https://github.com/SuperFieroStatus/fiero-weather) installed): the current
+  conditions under the date, e.g. `☁️ 60° Cloudy · H 71° L 56°`. Fiero itself still never goes online:
+  Fiero Weather refreshes every 30 minutes and hands the line over. Without it the line just isn't shown.
+- **Outer screen** (TCL Flip 2): the current weather along the bottom of the small 128×128 front screen,
+  under the phone's own clock. Optional: make that screen's background black.
 - **Tiny:** ~75 KB, no libraries, no network access, no ads or tracking.
 
 ## Keys on the home screen
@@ -122,7 +125,9 @@ On Windows, `scripts\deploy.ps1` does build + install + launch + logcat in one g
 ## How it works
 
 Plain Kotlin and Android Views, no dependencies. The Now Playing line reads active media sessions through
-a notification listener, which is also what allows Silent mode. On the TCL Flip 2 the front button arrives
+a notification listener, which is also what allows Silent mode. Weather arrives from Fiero Weather as an
+explicit broadcast guarded by a signature permission (`dev.mike.fiero.permission.WEATHER`), so only apps
+signed with the same key can send it. On the TCL Flip 2 the front button arrives
 as the broadcast `com.tct.intent.action.QUICK_BUTTON_TAP`, and the outer screen is a second display
 (128×128) that Fiero draws on with an overlay window. The home-screen entry lives on a disabled
 activity-alias so installing Fiero can't hijack the Home key.

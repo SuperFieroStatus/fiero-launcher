@@ -11,8 +11,18 @@
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
+    <!--
+      Current weather from Fiero Weather (Fiero itself has no internet access). Signature permission, declared
+      by both apps (same key): only Fiero apps can send the weather or ask for a refresh.
+    -->
+    <permission
+        android:name="dev.mike.fiero.permission.WEATHER"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="dev.mike.fiero.permission.WEATHER" />
+
     <!-- Android 11 package visibility: see every app that has a launcher entry (All apps list). -->
     <queries>
+        <package android:name="dev.mike.fieroweather" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -83,6 +93,15 @@
             android:excludeFromRecents="true"
             android:screenOrientation="portrait"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
+        <receiver
+            android:name=".WeatherReceiver"
+            android:exported="true"
+            android:permission="dev.mike.fiero.permission.WEATHER">
+            <intent-filter>
+                <action android:name="dev.mike.fierolauncher.action.WEATHER" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".NoticesActivity"
             android:exported="false"

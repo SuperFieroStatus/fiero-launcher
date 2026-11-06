@@ -35,6 +35,8 @@ class HomeActivity : Activity(), KeyActionHandler {
     private lateinit var softRight: TextView
     private lateinit var softLeft: TextView
     private val noticesChanged: () -> Unit = { showNoticeCount() }
+    private lateinit var weather: TextView
+    private val weatherChanged: () -> Unit = { showWeather() }
     private lateinit var telephony: TelephonyManager
     private lateinit var audio: AudioManager
     private lateinit var nowPlayingView: TextView
@@ -53,6 +55,7 @@ class HomeActivity : Activity(), KeyActionHandler {
         hints = findViewById(R.id.hints)
         softRight = findViewById(R.id.soft_right)
         softLeft = findViewById(R.id.soft_left)
+        weather = findViewById(R.id.weather)
         telephony = getSystemService(TelephonyManager::class.java)
         audio = getSystemService(AudioManager::class.java)
         nowPlayingView = findViewById(R.id.now_playing)
@@ -121,6 +124,15 @@ class HomeActivity : Activity(), KeyActionHandler {
         nowPlaying.start()
         Notices.observe(noticesChanged)
         showNoticeCount()
+        Weather.observe(weatherChanged)
+        showWeather()
+        Weather.refreshIfStale(this)
+    }
+
+    private fun showWeather() {
+        val w = Weather.current(this)
+        weather.visibility = if (w == null) android.view.View.GONE else android.view.View.VISIBLE
+        if (w != null) weather.text = Weather.line(w)
     }
 
     /** "Notices 3" on the left soft key; plain "Notices" when there's nothing (or no access). */
@@ -136,6 +148,7 @@ class HomeActivity : Activity(), KeyActionHandler {
         telephony.listen(signalListener, PhoneStateListener.LISTEN_NONE)
         unregisterReceiver(ringerReceiver)
         Notices.unobserve(noticesChanged)
+        Weather.unobserve(weatherChanged)
         nowPlaying.stop()
         pendingShort = 0
     }
