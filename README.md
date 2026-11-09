@@ -20,7 +20,10 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 - **Phone-style keys:** Call opens the dialer; digits, `*` and `#` open the dialer with that key typed.
 - **Notices:** the left soft key opens a keypad list of your notifications (the stock shade is built for
   touch and, on a 240×320 screen, mostly shows the music player). OK opens one, left soft key clears it,
-  right soft key clears all. The home screen shows how many are waiting ("Notices 2").
+  right soft key clears all. The home screen counts **texts, missed calls and voicemail** ("Notices 2").
+- **Quiet status bar:** everything else (Wi-Fi offers, USB, app notices, the music player) is snoozed, so
+  the phone's status-bar count only goes up for texts, calls and voicemail. Quieted notices are still
+  listed (greyed) under Notices. Alarms, calendar reminders and Fiero's own apps are left alone.
 - **Long presses:** `*` play/pause, `#` toggles Silent.
 - **Front button** (TCL Flip 2): pauses music, even with the flip closed. It never starts playback, so a
   pocket press can't set it off; hold `*` on the home screen to play.
@@ -48,7 +51,8 @@ from the keypad: there's no touch screen to rely on, so nothing needs one.
 right soft key clears the filter, **left soft key = Options**: put the app on a key, or App info.
 
 **Notices:** ▲▼ move, OK opens, left soft key clears, right soft key clears all (press twice), Back goes home.
-Media players are left out (they're on the Now Playing line); ongoing ones (USB, charging) are grey.
+Texts, missed calls and voicemail come first; everything else is grey. Media players are left out (they're
+on the Now Playing line).
 
 To change a shortcut: OK → find the app → left soft key → pick the key.
 

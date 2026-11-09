@@ -135,9 +135,9 @@ class HomeActivity : Activity(), KeyActionHandler {
         if (w != null) weather.text = Weather.line(w)
     }
 
-    /** "Notices 3" on the left soft key; plain "Notices" when there's nothing (or no access). */
+    /** "Notices 3" on the left soft key, counting texts, missed calls and voicemail only. */
     private fun showNoticeCount() {
-        val n = Notices.current()?.count { it.clearable } ?: 0
+        val n = Notices.current()?.count { it.important } ?: 0
         softLeft.text = if (n > 0) "Notices $n" else "Notices"
     }
 

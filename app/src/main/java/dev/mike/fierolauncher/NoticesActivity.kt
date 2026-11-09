@@ -72,7 +72,7 @@ class NoticesActivity : Activity(), KeyActionHandler {
             notices.map { n ->
                 val label = listOf(n.title, n.text).filter { it.isNotBlank() }.joinToString(" · ")
                 val time = if (DateUtils.isToday(n.time)) timeFmt.format(n.time) else dateFmt.format(n.time)
-                ListItem(label, detail = "${Notices.appLabel(this, n.pkg)} · $time", dim = !n.clearable)
+                ListItem(label, detail = "${Notices.appLabel(this, n.pkg)} · $time", dim = !n.important)
             },
             notices.indexOfFirst { it.key == keep }.coerceAtLeast(0),
         )
@@ -122,7 +122,7 @@ class NoticesActivity : Activity(), KeyActionHandler {
                 startActivity(launch)
             }
             // The stock shade drops auto-cancel notices when they're opened; do the same.
-            if (notification.flags and Notification.FLAG_AUTO_CANCEL != 0 && n.clearable) Notices.dismiss(n.key)
+            if (notification.flags and Notification.FLAG_AUTO_CANCEL != 0 && n.clearable) Notices.dismiss(n)
         } catch (e: PendingIntent.CanceledException) {
             Log.w(KeyRouter.TAG, "notice open: $e")
             say("Can't open that")
@@ -131,7 +131,7 @@ class NoticesActivity : Activity(), KeyActionHandler {
 
     private fun clear(n: Notice) {
         if (!n.clearable) return say("Can't clear that one")
-        Notices.dismiss(n.key)
+        Notices.dismiss(n)
     }
 
     private fun clearAll() {
@@ -144,7 +144,7 @@ class NoticesActivity : Activity(), KeyActionHandler {
             return
         }
         clearAllArmedAt = 0
-        clearable.forEach { Notices.dismiss(it.key) }
+        clearable.forEach { Notices.dismiss(it) }
     }
 
     /** Fallback when Fiero has no notification access. */

@@ -34,6 +34,28 @@ class NoticesTest {
         keys(listOf(n("old", time = 1), n("usb", time = 9, clearable = false), n("new", time = 5))),
     )
 
+    @Test fun importantFirst() {
+        val text = Notice("sms", "com.android.mms", null, "Mom", "hi", 1, true, false, false, null)
+        val email = Notice("mail", "com.android.email", null, "Bill", "due", 9, true, false, false, null, quiet = true)
+        assertEquals(listOf("sms", "mail"), Notices.visible(listOf(email, text)).map { it.key })
+    }
+
+    @Test fun whatGetsQuieted() {
+        // kept: texts, calls, voicemail, alarms, Fiero's own apps
+        assertEquals(false, Notices.shouldQuiet("com.android.mms", transport = false, clearable = true))
+        assertEquals(false, Notices.shouldQuiet("com.android.dialer", transport = false, clearable = true))
+        assertEquals(false, Notices.shouldQuiet("com.android.phone", transport = false, clearable = false))
+        assertEquals(false, Notices.shouldQuiet("com.android.deskclock", transport = false, clearable = false))
+        assertEquals(false, Notices.shouldQuiet("dev.mike.fieronav", transport = false, clearable = false))
+        // quieted: media players, Android's own (Wi-Fi offers, USB, overlay), other apps' clearable notices
+        assertEquals(true, Notices.shouldQuiet("com.spotify.music", transport = true, clearable = false))
+        assertEquals(true, Notices.shouldQuiet("android", transport = false, clearable = false))
+        assertEquals(true, Notices.shouldQuiet("com.android.systemui", transport = false, clearable = true))
+        assertEquals(true, Notices.shouldQuiet("com.android.email", transport = false, clearable = true))
+        // other apps' ongoing notices (foreground services) are left alone
+        assertEquals(false, Notices.shouldQuiet("org.fdroid.fdroid", transport = false, clearable = false))
+    }
+
     @Test fun summaryOnlyWithoutMembers() {
         assertEquals(
             listOf("msg1"),
